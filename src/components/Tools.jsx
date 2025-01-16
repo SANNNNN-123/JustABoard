@@ -7,6 +7,7 @@ const Tools = ({ scene, camera, renderer }) => {
   const objects = useRef([]);
   const dragControlsRef = useRef(null);
   const groupRef = useRef(null);
+  const pegboardComponentsRef = useRef([]);
 
   useEffect(() => {
     if (!scene || !camera || !renderer) return;
@@ -16,16 +17,17 @@ const Tools = ({ scene, camera, renderer }) => {
     groupRef.current = group;
     scene.add(group);
 
-    // Tool name mapping for identification
     const toolNames = [
-      'turnscrew2',
-      'turnscrew',
-      'wrench',
-      'knife',
-      'roulette',
-      'insulatingtape',
-      'pliers'
+      'turnscrew2', 'turnscrew', 'wrench', 'knife', 
+      'roulette', 'insulatingtape', 'pliers'
     ];
+
+    // Find and store pegboard components
+    scene.children[0]?.traverse((child) => {
+      if (child.isMesh && child.geometry) {
+        pegboardComponentsRef.current.push(child);
+      }
+    });
 
     // Model loading
     const assetLoader = new GLTFLoader();
@@ -44,11 +46,11 @@ const Tools = ({ scene, camera, renderer }) => {
             child.castShadow = true;
             child.receiveShadow = true;
             
-            // Find and tag specific tools
             toolNames.forEach(toolName => {
               if (child.name.toLowerCase().includes(toolName)) {
                 child.userData.isDraggable = true;
                 child.userData.toolType = toolName;
+                child.userData.currentPosition = new THREE.Vector3();
                 objects.current.push(child);
               }
             });
@@ -57,23 +59,57 @@ const Tools = ({ scene, camera, renderer }) => {
 
         group.add(model);
 
-        // Initialize DragControls with objects array
+        // Initialize DragControls
         const controls = new DragControls(objects.current, camera, renderer.domElement);
         controls.rotateSpeed = 4;
         dragControlsRef.current = controls;
 
-        // Event listeners
+        // Event listeners for drag controls
         controls.addEventListener('dragstart', function (event) {
           renderer.domElement.style.cursor = 'grabbing';
-          event.object.userData.originalPosition = event.object.position.clone();
+          event.object.userData.currentPosition.copy(event.object.position);
+          controls.enabled = true;
         });
 
         controls.addEventListener('drag', function (event) {
+          const currentObject = event.object;
+          const currentBB = new THREE.Box3().setFromObject(currentObject);
+          let hasCollision = false;
+
+          // Check collision with pegboard components
+          for (const component of pegboardComponentsRef.current) {
+            const componentBB = new THREE.Box3().setFromObject(component);
+            if (currentBB.intersectsBox(componentBB)) {
+              hasCollision = true;
+              break;
+            }
+          }
+
+          // Check collisions with other tools if no pegboard collision
+          if (!hasCollision) {
+            objects.current.forEach(obj => {
+              if (obj !== currentObject) {
+                const otherBB = new THREE.Box3().setFromObject(obj);
+                if (currentBB.intersectsBox(otherBB)) {
+                  hasCollision = true;
+                }
+              }
+            });
+          }
+
+          if (hasCollision) {
+            // Revert to last valid position
+            event.object.position.copy(event.object.userData.currentPosition);
+          } else {
+            // Update last valid position
+            event.object.userData.currentPosition.copy(event.object.position);
+          }
+
           // Maintain z-position during drag
-          event.object.position.z = event.object.userData.originalPosition.z;
+          event.object.position.z = event.object.userData.currentPosition.z;
         });
 
-        controls.addEventListener('dragend', function () {
+        controls.addEventListener('dragend', function (event) {
           renderer.domElement.style.cursor = 'auto';
         });
 
@@ -121,6 +157,7 @@ const Tools = ({ scene, camera, renderer }) => {
         dragControlsRef.current.dispose();
       }
       objects.current = [];
+      pegboardComponentsRef.current = [];
     };
   }, [scene, camera, renderer]);
 
