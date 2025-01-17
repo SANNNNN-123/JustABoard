@@ -7,7 +7,6 @@ const Tools = ({ scene, camera, renderer }) => {
   const objects = useRef([]);
   const dragControlsRef = useRef(null);
   const groupRef = useRef(null);
-  const pegboardComponentsRef = useRef([]);
 
   useEffect(() => {
     if (!scene || !camera || !renderer) return;
@@ -22,13 +21,6 @@ const Tools = ({ scene, camera, renderer }) => {
       'roulette', 'insulatingtape', 'pliers'
     ];
 
-    // Find and store pegboard components
-    scene.children[0]?.traverse((child) => {
-      if (child.isMesh && child.geometry) {
-        pegboardComponentsRef.current.push(child);
-      }
-    });
-
     // Model loading
     const assetLoader = new GLTFLoader();
     assetLoader.load(
@@ -38,7 +30,7 @@ const Tools = ({ scene, camera, renderer }) => {
         
         model.scale.set(0.1, 0.1, 0.1);
         model.rotation.x = Math.PI / 2;
-        model.position.set(1, 0, 0);
+        model.position.set(5, 0, 0);
 
         // Process meshes and add to objects array
         model.traverse(function(child) {
@@ -76,26 +68,15 @@ const Tools = ({ scene, camera, renderer }) => {
           const currentBB = new THREE.Box3().setFromObject(currentObject);
           let hasCollision = false;
 
-          // Check collision with pegboard components
-          for (const component of pegboardComponentsRef.current) {
-            const componentBB = new THREE.Box3().setFromObject(component);
-            if (currentBB.intersectsBox(componentBB)) {
-              hasCollision = true;
-              break;
-            }
-          }
-
-          // Check collisions with other tools if no pegboard collision
-          if (!hasCollision) {
-            objects.current.forEach(obj => {
-              if (obj !== currentObject) {
-                const otherBB = new THREE.Box3().setFromObject(obj);
-                if (currentBB.intersectsBox(otherBB)) {
-                  hasCollision = true;
-                }
+          // Check collisions with other tools
+          objects.current.forEach(obj => {
+            if (obj !== currentObject) {
+              const otherBB = new THREE.Box3().setFromObject(obj);
+              if (currentBB.intersectsBox(otherBB)) {
+                hasCollision = true;
               }
-            });
-          }
+            }
+          });
 
           if (hasCollision) {
             // Revert to last valid position
@@ -157,7 +138,6 @@ const Tools = ({ scene, camera, renderer }) => {
         dragControlsRef.current.dispose();
       }
       objects.current = [];
-      pegboardComponentsRef.current = [];
     };
   }, [scene, camera, renderer]);
 

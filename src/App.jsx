@@ -1,3 +1,5 @@
+// App.jsx
+
 import React from 'react';
 import PegBoard from './components/PegBoard';
 

@@ -75,9 +75,16 @@ const PegBoard = () => {
           if (object.isMesh && 
               object.material && 
               (object.material.name === 'defaultMaterial' || 
-              object.material.name === 'defaultMaterial_4' || 
-              object.name === 'defaultMaterial' || 
-              object.name === 'defaultMaterial_4')) {
+              // object.material.name === 'defaultMaterial_1' ||
+              object.material.name === 'defaultMaterial_3' ||
+              object.material.name === 'defaultMaterial_4' ||
+              object.material.name === 'defaultMaterial_5' ||  
+               
+              object.name === 'defaultMaterial' ||
+              // object.name === 'defaultMaterial_1' ||
+              object.name === 'defaultMaterial_3' ||
+              object.name === 'defaultMaterial_4' || 
+              object.name === 'defaultMaterial_5')) {
             
             if (object.geometry) object.geometry.dispose();
             if (object.material) object.material.dispose();
