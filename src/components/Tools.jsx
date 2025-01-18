@@ -30,7 +30,16 @@ const Tools = ({ scene, camera, renderer }) => {
         
         model.scale.set(0.1, 0.1, 0.1);
         model.rotation.x = Math.PI / 2;
-        model.position.set(5, 0, 0);
+        model.position.set(4, 0, 0);
+
+        // Add lighting
+        // const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(0, 0, 0);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
 
         // Process meshes and add to objects array
         model.traverse(function(child) {

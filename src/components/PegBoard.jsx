@@ -49,12 +49,12 @@ const PegBoard = () => {
 
     // Lights setup
     const lights = {
-      ambient: new THREE.AmbientLight(0xededed, 2),
+      ambient: new THREE.AmbientLight(0xededed, 2.2),
       point: new THREE.PointLight(0xFFFFFF, 1.2)
     };
 
     // Position point light at camera position
-    lights.point.position.set(0, 0, 10);
+    lights.point.position.set(0, 0, 0);
     lights.point.castShadow = true;
 
     // Add lights to scene
@@ -101,7 +101,7 @@ const PegBoard = () => {
           }
         });
 
-        model.scale.set(3, 3, 3);
+        model.scale.set(5, 5, 5);
         scene.add(model);
         setSceneReady(true);
       },
