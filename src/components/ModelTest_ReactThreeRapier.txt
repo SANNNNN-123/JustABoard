@@ -15,13 +15,13 @@ const FallbackBox = ({ position }) => (
 
 const Ground = () => (
   <RigidBody type="fixed" friction={1}>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -3, 2]}>
-      <planeGeometry args={[10, 10]} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.1, 0]}>
+      <planeGeometry args={[20, 20]} />
       <meshStandardMaterial color="#ffffff" roughness={0.8} metalness={0.2} />
     </mesh>
     <Grid 
-      args={[10, 10]} 
-      position={[0, -3, 2]}
+      args={[20, 20]} 
+      position={[0, 0, 0]}
       cellSize={1}
       cellThickness={1}
       cellColor="#6f6f6f"
@@ -36,9 +36,6 @@ const Ground = () => (
 );
 
 const Tool = ({ name, position, scene }) => {
-  const meshRef = useRef();
-  const rigidBodyRef = useRef();
-  const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState(false);
   let meshData;
   try {
@@ -62,7 +59,6 @@ const Tool = ({ name, position, scene }) => {
 
     return (
       <RigidBody 
-        ref={rigidBodyRef}
         position={position}
         rotation={[
           Math.random() * Math.PI * 2,
@@ -70,40 +66,17 @@ const Tool = ({ name, position, scene }) => {
           Math.random() * Math.PI * 2
         ]}
         colliders="cuboid"
-        restitution={0.01}
-        friction={1.0}
-        mass={2.0}
-        linearDamping={0.25}
-        angularDamping={0.25}
-        enabledRotations={[!isDragging, !isDragging, !isDragging]}
+        restitution={0.01} // Reduced bounciness
+        friction={1.0}    // Increased friction
+        mass={2.0}        // Increased mass
+        linearDamping={0.25} // Added damping to slow down movement
+        angularDamping={0.25} // Added damping to slow down rotation
       >
         <mesh 
-          ref={meshRef}
           geometry={geometry}
           material={material}
           castShadow
           receiveShadow
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            setIsDragging(true);
-            document.body.style.cursor = 'grabbing';
-          }}
-          onPointerUp={() => {
-            setIsDragging(false);
-            document.body.style.cursor = 'auto';
-          }}
-          onPointerMove={(e) => {
-            if (isDragging) {
-              e.stopPropagation();
-              const { point } = e;
-              rigidBodyRef.current.setTranslation({ 
-                x: point.x, 
-                y: point.y, 
-                z: point.z 
-              });
-              rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 });
-            }
-          }}
         />
       </RigidBody>
     );
@@ -138,40 +111,6 @@ const Tools = () => {
   );
 };
 
-const PegBoard = () => {
-  const { scene } = useGLTF('/a_peg_board.glb');
-  
-  const removeObjectsWithDefaultMaterial = (object) => {
-    for (let i = object.children.length - 1; i >= 0; i--) {
-      removeObjectsWithDefaultMaterial(object.children[i]);
-    }
-
-    if (object.isMesh && 
-        object.material && 
-        (object.material.name === 'defaultMaterial' || 
-        object.material.name === 'defaultMaterial_3' ||
-        object.material.name === 'defaultMaterial_4' ||
-        object.name === 'defaultMaterial' ||
-        object.name === 'defaultMaterial_3' ||
-        object.name === 'defaultMaterial_4' )) {
-      
-      if (object.geometry) object.geometry.dispose();
-      if (object.material) object.material.dispose();
-      if (object.parent) object.parent.remove(object);
-    }
-  };
-
-  // Clone the scene to avoid modifying the cached original
-  const clonedScene = scene.clone();
-  removeObjectsWithDefaultMaterial(clonedScene);
-
-  return (
-    <RigidBody type="fixed" position={[0, 0, -3]}>
-      <primitive object={clonedScene} scale={[3, 3, 3]} />
-    </RigidBody>
-  );
-};
-
 const Scene = () => {
   return (
     <Physics 
@@ -184,7 +123,6 @@ const Scene = () => {
       <Ground />
       <Suspense fallback={null}>
         <Tools />
-        <PegBoard />
       </Suspense>
 
       <ambientLight intensity={1.5} />
@@ -212,17 +150,15 @@ function ModelTest() {
     <div style={{ width: '100%', height: '100vh' }}>
       <Canvas
         shadows
-        camera={{ position: [0, 0, 10], fov: 40 }}
+        camera={{ position: [0, 10, 15], fov: 15 }}
         style={{ background: '#A3A3A3' }}
       >
         <Scene />
         <OrbitControls 
           enableDamping 
           dampingFactor={0.05}
-          minDistance={5}
+          minDistance={3}
           maxDistance={30}
-          enableRotate={false}
-          enablePan={false}
         />
       </Canvas>
     </div>
@@ -230,6 +166,5 @@ function ModelTest() {
 }
 
 useGLTF.preload('/tools_pack.glb');
-useGLTF.preload('/a_peg_board.glb');
 
 export default ModelTest;
